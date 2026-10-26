@@ -1,6 +1,6 @@
 {
   "name": "dsh-dory",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Standalone Dory inference provider with independently saved loop-count profiles for DeepSeek Harness.",
   "type": "module",
   "license": "MIT",
@@ -23,11 +23,15 @@
     "cordis.patch.yml",
     "README.md",
     "LICENSE",
-    "docs"
+    "docs",
+    "scripts",
+    "lib/recommended-models.mjs",
+    "lib/recommended-models.json"
   ],
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check index.js && node --check client.js && node --check lib/runtime.js"
+    "check": "node --check index.js && node --check client.js && node --check lib/runtime.js",
+    "build:engine": "node scripts/build-engine.js"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.5",

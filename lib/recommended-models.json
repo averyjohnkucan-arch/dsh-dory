@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "dory-4b-loops-1",
+      "name": "NVIDIA DORY 1.0 4B \u00b7 NVIDIA BF16 1 Loop",
+      "recommended": true,
+      "files": [
+        {
+          "sha256": "c081a8d48262b5381efc588e14da1b0a954e70e45dbaab24cb19b1999d34de49",
+          "size": 7958360896,
+          "name": "Dory1.0-4B-BF16.gguf",
+          "role": "modelPath",
+          "target": "Dory1.0-4B-BF16.gguf",
+          "downloadable": false,
+          "evidence": "Existing local download/hash receipt"
+        }
+      ],
+      "notes": "From your saved setup. Confirm engine compatibility and memory fit before loading. Local runtime packs are prepared separately.",
+      "settings": {
+        "loops": 1,
+        "context": 262144,
+        "kvK": "f16",
+        "kvV": "f16",
+        "kvMode": "per_loop",
+        "sampling": {
+          "temperature": 1,
+          "top_p": 0.95,
+          "top_k": 0,
+          "min_p": 0,
+          "typical_p": 1,
+          "repeat_penalty": 1,
+          "presence_penalty": 0,
+          "frequency_penalty": 0,
+          "mirostat": 0,
+          "dry_multiplier": 0,
+          "xtc_probability": 0
+        }
+      }
+    }
+  ]
+}

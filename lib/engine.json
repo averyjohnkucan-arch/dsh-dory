@@ -1,0 +1,8 @@
+{
+  "source": "https://github.com/brianchmielNV/llama.cpp.git",
+  "revision": "98a74c97ea09ac72f6ceda1559808fc0a2f447ce",
+  "tree": "6658d6a34cfe6c98b514bae6682769b936be4f54",
+  "backend": "CUDA",
+  "model_support": "Dory per_loop and last_loop; loops1–4",
+  "qualification": "Pinned implementation only; per-profile model acceptance remains required"
+}
