@@ -24,7 +24,7 @@ run('git', 'init', str(source))
 run('git', '-C', str(source), 'fetch', '--depth=1', pin['source'], pin['revision'])
 run('git', '-C', str(source), 'checkout', '--detach', 'FETCH_HEAD')
 assert run('git', '-C', str(source), 'rev-parse', 'HEAD^{tree}').strip() == pin['tree']
-subprocess.run(['cmake', '-S', str(source), '-B', str(build), '-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release', '-DGGML_CUDA=ON', '-DGGML_NATIVE=OFF', '-DGGML_CUDA_FA_ALL_QUANTS=OFF', '-DLLAMA_CURL=OFF', '-DLLAMA_BUILD_TESTS=OFF', '-DCMAKE_CUDA_ARCHITECTURES=120'], check=True)
+subprocess.run(['cmake', '-S', str(source), '-B', str(build), '-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release', '-DGGML_CUDA=ON', '-DGGML_NATIVE=OFF', '-DGGML_CUDA_FA_ALL_QUANTS=OFF', '-DLLAMA_CURL=OFF', '-DLLAMA_OPENSSL=OFF', '-DLLAMA_USE_PREBUILT_UI=OFF', '-DLLAMA_BUILD_UI=OFF', '-DLLAMA_BUILD_TESTS=OFF', '-DCMAKE_CUDA_ARCHITECTURES=120'], check=True)
 subprocess.run(['cmake', '--build', str(build), '--target', 'llama-server', '--parallel', '4'], check=True)
 package.mkdir()
 libs = package / 'lib'
@@ -34,7 +34,8 @@ licenses.mkdir()
 shutil.copy2(build / 'bin/llama-server', package / 'llama-server.bin')
 env = dict(os.environ, LD_LIBRARY_PATH=str(build / 'bin') + ':/usr/local/cuda-13.1/targets/x86_64-linux/lib')
 output = run('ldd', str(build / 'bin/llama-server'), env=env)
-assert 'not found' not in output, output
+missing = [line for line in output.splitlines() if 'not found' in line and not line.strip().startswith('libcuda.so.1 ')]
+assert not missing, '\n'.join(missing)
 # ldd includes the transitive dependency closure. Keep the host driver and glibc
 # on the host; CUDA, ggml and C++ runtime libraries travel with the executable.
 excluded = ('libc.so', 'libm.so', 'libpthread.so', 'libdl.so', 'librt.so', 'libcuda.', 'libnvidia-')
@@ -45,14 +46,14 @@ for line in output.splitlines():
 (package / 'llama-server').write_text('#!/bin/sh\ndirectory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexport LD_LIBRARY_PATH="$directory/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\nexec "$directory/llama-server.bin" "$@"\n')
 (package / 'llama-server').chmod(0o755)
 shutil.copy2(source / 'LICENSE', licenses / 'llama.cpp-MIT.txt')
-for owner in ('libstdc++6', 'libgcc-s1', 'libgomp1'):
+for owner in ('libstdc++6', 'libgcc-s1', 'libgomp1', 'cuda-cudart-13-1', 'libcublas-13-1'):
     path = Path('/usr/share/doc') / owner / 'copyright'
     if path.exists():
         shutil.copy2(path.resolve(), licenses / (owner + '.txt'))
-for name in ('EULA.txt', 'LICENSE'):
+for name in ('EULA.txt', 'doc/EULA.txt', 'LICENSE'):
     path = Path('/usr/local/cuda-13.1') / name
     if path.exists():
-        shutil.copy2(path, licenses / ('CUDA-' + name))
+        shutil.copy2(path, licenses / ('CUDA-' + name.replace('/', '-')))
 (licenses / 'SOURCE-NOTICE.txt').write_text('Source: ' + pin['source'] + '\nCommit: ' + pin['revision'] + '\nCUDA 13.1 runtime redistributables from NVIDIA. Ubuntu 24.04 C++/OpenMP runtime libraries from Ubuntu packages; corresponding sources are available from Ubuntu archives. Host glibc 2.39+, NVIDIA driver and Linux x64 required. CUDA architecture 120 only.\n')
 files = [{'name': str(p.relative_to(package)), 'size': p.stat().st_size, 'sha256': digest(p)} for p in sorted(package.rglob('*')) if p.is_file()]
 metadata = {'version': 1, 'revision': pin['revision'], 'tree': pin['tree'], 'platform': 'linux-x64', 'architectures': ['120'], 'glibc': '2.39', 'cuda': '13.1', 'files': files}

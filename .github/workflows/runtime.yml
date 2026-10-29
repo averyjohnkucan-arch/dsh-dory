@@ -22,6 +22,14 @@ jobs:
           if gh release view "$RUNTIME_TAG" >/dev/null 2>&1; then
             echo 'exists=true' >> "$GITHUB_OUTPUT"
           fi
+      - name: Restore compiled objects
+        if: steps.release.outputs.exists != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ runner.temp }}/dory-runtime/source
+            ${{ runner.temp }}/dory-runtime/build
+          key: dory-98a74c97-cuda13.1-sm120-v2
       - name: Install CUDA toolchain
         if: steps.release.outputs.exists != 'true'
         run: |
@@ -34,6 +42,14 @@ jobs:
         env:
           PATH: /usr/local/cuda-13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         run: python3 scripts/package-runtime.py
+      - name: Save compiled objects
+        if: always() && steps.release.outputs.exists != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ runner.temp }}/dory-runtime/source
+            ${{ runner.temp }}/dory-runtime/build
+          key: dory-98a74c97-cuda13.1-sm120-v2
       - name: Publish checked runtime
         if: steps.release.outputs.exists != 'true'
         env:
