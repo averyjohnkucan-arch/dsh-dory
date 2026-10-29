@@ -1,43 +1,48 @@
-# Dory inference for DeepSeek Harness
+# Dory for DeepSeek Harness
 
-A standalone Cordis plugin, modeled on the profile-management pattern of `dsh-strata` and `dsh-ninfer`. It registers the **Dory** provider and a **Dory** card under **My Models**. It does not modify either existing engine plugin, DSH core, the chat UI, or source weights.
+Install `https://github.com/averyjohnkucan-arch/dsh-dory` through DSH's plugin manager. The **Dory** provider appears under Models. This plugin is independent of Strata and NInfer.
 
-## Profiles and loops
+## Set up a model
 
-Add a model, choose its GGUF and a **Dory-enabled llama-server** binary, and save. Duplicate it to create independently named profiles such as `Dory · 1 loop` through `Dory · 4 loops`. All four can point to the **same file**; no copying or re-quantization is needed. Select the desired profile in the standard chat model picker. Each profile has its own context, loop count, KV cache mode/precision, sampling, batch sizes, GPU settings and port. Two loops is the default. The supported loop range is 1–4.
+1. Choose **Import files** and open your model folder. Scan it, including subfolders, or select a GGUF directly.
+2. The Files view separates complete models from models missing shards. Expand a model to see every shard and its role. Weights stay where they are.
+3. Open **Settings**. Set the model name, loops, context and K/V precision, then save or **Save and benchmark**.
+4. Select the saved name in DSH's chat model picker. Duplicate a profile to keep separate 1-, 2-, 3- and 4-loop setups using the same weights.
 
-Loops are engine startup settings, not per-request hints. Profile switching uses the existing optional `modelScheduler` Cordis service to unload/reload owned engines. Multiple concurrent profiles never share a single engine's changing loop configuration. Without the scheduler, one Dory engine runs per GPU; foreign GPU processes cause admission refusal and are never stopped. The plugin never attaches to an unrelated server on the same port.
+The default context is native (262,144 tokens for Dory 1.0); shorter choices use 32K increments. K/V formats are FP16, Q8 and Q4, the formats supported by this runtime build. Matching K/V formats use dedicated attention kernels; mixed pairs use a slower FP16 attention fallback. The model's weight quantization and its KV precision are separate settings.
 
-## Runtime
+Dory uses recurrent loops rather than MTP or DFlash. This runtime is text only: there are no MTP, draft-model or vision-projector files to select. Two loops and `per_loop` KV mode follow [NVIDIA's reference setup](https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-BF16). `last_loop` is an explicit smaller-cache behavior tradeoff. Loops and KV format take effect when the engine reloads.
 
-This plugin manages the **Dory-enabled llama.cpp server**, not a new inference implementation. Stock llama.cpp versions without Dory support will fail. NVIDIA documents the Dory implementation at [llama.cpp PR30306](https://github.com/ggml-org/llama.cpp/pull/30306), and a separate [vLLM PR60149](https://github.com/vllm-project/vllm/pull/60149); this release does **not** manage vLLM or claim NInfer supports Dory.
+## Runtime and fitting
 
-The package includes a pinned standalone runtime builder. See [portable runtime setup](docs/runtime-setup.md) to provision it through this plugin. You can also use NVIDIA's [model card](https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-BF16#loop-count-and-kv-cache) to obtain/build a compatible binary. Model and executable paths are chosen locally. There are no personal absolute paths or weights bundled here. The default native context is 262,144; memory fit depends on the selected weights, loop count, KV mode and hardware. Selecting a KV format does not guarantee that a particular binary supports that combination. Startup errors remain visible in the settings card.
+The plugin downloads its checksum-pinned Dory-enabled llama.cpp runtime from this repository's GitHub release automatically. Activity shows progress, cancellation and a retry button. No compiler or other inference plugin is required on the supported platform: **Linux x64, glibc 2.39+, CUDA 13-compatible NVIDIA driver, SM120 GPU**. The host supplies the NVIDIA driver. Other systems can use a compatible Dory server through Advanced settings or the source builder in [runtime setup](docs/runtime-setup.md).
 
-The default `per_loop` KV mode retains separate recurrent-loop caches. `last_loop` is an explicit optional memory/behavior tradeoff. Reasoning stays enabled, matching NVIDIA's published setup; this plugin does not invent unsupported reasoning effort levels or promise quality improvements for extra loops.
+New profiles let the native engine fit GPU placement to available memory. Your selected context and KV precision remain explicit. **Benchmark settings** measures the current profile and displays native **prefill and decode tokens/second**. Activity shows “Measuring…” until the completed sample arrives. The measurement and settings are saved per profile. Native placement is recalculated at each load; this is memory fitting plus a short benchmark, not Strata's Thorough parameter search or a long-context quality test. Turn fitting off in Advanced settings to set GPU layers manually.
 
-## Sampling defaults
+Names, sampling, loop count, memory settings and ports belong to the saved profile. Renaming retains its identity and model files and updates the standard model picker. Editing a loaded profile unloads it; the next load uses the saved settings. Active answers cannot be interrupted by an edit or purge.
 
-NVIDIA recommends **temperature 1.0, top P 0.95**. The plugin explicitly sets neutral defaults for other controls: top K0 (disabled), min P0, typical P1, repetition penalty1, presence/frequency penalties0, Mirostat0, DRY multiplier0 and XTC probability0. These neutral values are not additional NVIDIA recommendations. Settings are independently editable per profile, and are applied to the actual outgoing generation request, including tool continuations. Defaults do not impose a fixed random seed.
+## Portable model JSON
 
-## Install
+Use **More → Export config** to download a `.dsh-model.json`. It contains the name, loop/context/KV/sampling settings and every model shard's byte size and MD5. It excludes executable paths, environment variables, arbitrary CLI options, credentials and machine-specific ports.
 
-Install this package into your DSH plugin environment using its normal plugin manager or package workflow, then enable the bundled `cordis.patch.yml`. The client uses the standard `settings.models.footer` slot; the server uses `llm.registerAdapter`, the owner-capability web endpoint and optional `modelScheduler` hooks. All registrations and owned processes are disposed on unload.
+Use **Import config**, select the JSON, then choose a model folder. The importer scans subfolders, filters by exact size, verifies MD5 and links the matched files into a private shard directory without copying weights. File locations and names may change. Missing or mismatched pieces stop the import with a clear error. MD5 identifies your existing files; it is not a signature for untrusted downloads. Hosted downloads use SHA-256.
 
-The only persistent data is the plugin-owned `dsh-dory/profiles.json` under `DSH_HOME` (or `~/.dsh`), overridable through `dataDir`. Creating or removing profiles never deletes model files. This plugin does not change your default chat model or import existing profiles automatically. It does not implement portable on-disk KV checkpoints; native in-process cache behavior remains the engine's responsibility.
+## Conversation cache
 
-## Development and validation
+The native server saves and restores conversation KV checkpoints to this plugin's private `cache` directory. Checkpoints survive engine switches and normal restarts/reboots. Each model has a **16 GiB SSD budget**, shared across its loop/KV configurations; least recently used checkpoints are removed first. Cache compatibility includes model identity, engine, context, loops and KV settings. The native engine still checks the token prefix when restoring a conversation. Prompt text is not stored in the catalog; the native checkpoint itself contains model state.
 
-Requires Node.js22.19+ and DSH0.2.1-rc.2. Install peer dependencies, then run `npm test` and `npm run check`. Tests use local CPU HTTP fixtures for lifecycle and request wiring; they are distinct from real-model GPU correctness, fit and speed qualification. See `docs/validation.md` for the recorded results and limitations.
+**Purge all cache**, at the top of the card, unloads idle owned servers and removes conversation checkpoints. Weights, profiles and runtime downloads are retained. RAM/GPU caching remains native engine behavior. A checkpoint over 16 GiB is not saved, and cache failures are visible without discarding an otherwise completed answer.
 
-`lib/process.js` was adapted from the user's MIT-licensed dsh-strata plugin; its existing ownership-aware termination pattern is preserved. No runtime import of either other engine plugin is needed.
+Persistent conversation caching requires the DSH session identifier. Calls without one still use native in-process prompt caching. Interrupted or failed answers do not replace a valid SSD checkpoint.
 
-Named function choices are translated to the pinned runtime’s `required` mode with only the selected tool declaration. The plugin preserves the tool argument schema and rejects missing or ambiguous names, instead of allowing the runtime to silently use `auto`.
+## Downloads and data
 
-## Recommended models and verified downloads
+The Download tab offers NVIDIA's official Q5_K_M GGUF pinned to an immutable revision, exact size and SHA-256. The existing local BF16 conversion is also listed by identity. Downloading the original Safetensors checkpoint does not recreate that converted GGUF.
 
-Open **Recommended models · exact revisions and hashes** in this plugin's settings card. The catalog records the checkpoints/components from the owner's configured setup with immutable repository revisions and SHA-256 (or Git blob hashes for small snapshot assets). Expand **Files, sizes and exact identities** before selecting a set.
+State lives under `DSH_HOME/dsh-dory` (normally `~/.dsh/dsh-dory`), or the configured `dataDir`. Plugin removal does not delete external model files. A shared model scheduler is used when available; the fallback owns one engine per GPU and refuses foreign GPU processes and occupied HTTP ports.
 
-**Download / verify recommended** saves a complete pinned set in this plugin's private `recommended-models` directory. Downloads resume from partial files, validate content before publishing final files, preserve existing models, and expose progress, cancellation and explicit failures. Repeating the action verifies/reuses existing files. Downloads do not start inference. **Add downloaded files** fills the existing model import/edit workflow for review and saving. Runtime installation remains separate.
+## Development
 
-Some configured artifacts are locally converted or assembled from multiple sources. Their exact local hashes are listed, but downloading the original publisher checkpoint cannot recreate those bytes. Use **Add existing model** and the normal importer for those entries. No incomplete component set is presented as a working download. Recommendations describe the saved setup; they do not establish memory fit or model quality on another computer.
+Node 22.19+ and DSH 0.2.1-rc.2 are required. Run `pnpm install --ignore-scripts`, `pnpm run check` and `pnpm test`. No engine process or model download is needed for the automated tests. Native validation and its limits are recorded in [validation](docs/validation.md).
+
+The portable file matching and job queue were adapted from the user's MIT-licensed Strata/NInfer plugins. The GGUF inspector uses Node.js and has no Python dependency. They are included locally, with no runtime dependency on those plugins. Engine source stays pinned; this release adds plugin features without changing its inference implementation.

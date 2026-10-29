@@ -1,15 +1,19 @@
-# Portable Dory runtime setup
+# Dory runtime
 
-The plugin includes its own runtime builder and exact public source pin in `lib/engine.json`. It does not import another engine plugin or require this developer’s runtime paths. Existing profiles and executables are preserved.
+The default runtime is installed automatically from this repository's pinned GitHub release. The plugin checks the manifest, compressed archive, extracted executable and every shipped library before use. Activity provides cancellation and retry. Partial downloads never become an installed runtime.
 
-From the installed package directory, run:
+The hosted build targets Linux x64, glibc 2.39+, CUDA 13.1 and SM120. It includes CUDA runtime, cuBLAS, ggml and C++ runtime libraries. The host NVIDIA driver remains external. Library notices and pinned source provenance travel with the runtime. Model weights are separate.
+
+## Other hardware or an existing server
+
+Open a model's Advanced settings and choose a compatible Dory-enabled `llama-server`. A custom binary must support Dory's loop/KV-mode overrides, the selected KV formats, memory fitting and native slot save/restore for enabled features. Clear the custom path to return to the managed runtime.
+
+For an explicit local source build:
 
 ```sh
-node scripts/build-engine.js --root /your/dory-runtime --jobs 2
+node scripts/build-engine.js --root /absolute/runtime/folder --arch 120 --jobs 2
 ```
 
-Prerequisites: Git, Node22.19+, CMake, Ninja, a C/C++ compiler, an NVIDIA driver and a compatible CUDA development toolkit. Set `CMAKE` or `DORY_CMAKE_ARGS` for an explicit toolchain. The CUDA architecture is detected or selected with `--arch`. This workflow currently provisions CUDA; it does not claim AMD, Intel or NPU runtime support.
+This advanced fallback requires Git, CMake, Ninja and a compatible CUDA development toolkit. The builder verifies the commit and tree in `lib/engine.json` and refuses a modified source checkout. Select the resulting executable in Advanced settings. `--prepare-only` fetches and verifies source without compiling. No code from your old installation or another plugin is required.
 
-The builder verifies the exact commit and source tree, then builds a revision-specific directory. Set the executable path returned in `DSH_RESULT` on your Dory profile. The model file is imported separately through the normal profile editor. Without `--root`, the owning directory is under `DSH_HOME/dsh-dory/engines` or `~/.dsh/dsh-dory/engines`.
-
-For source-only preparation, use `--prepare-only`. Neither preparing source nor compiling proves model fit, tool correctness or speed. Each loop profile still requires independent native-context and live-harness validation. Run builds separately from timed inference; builds do not stop foreign processes or automatically start a model.
+Runtime installation is distinct from model qualification. A successful build or download does not establish long-context throughput, memory fit or model quality on other hardware.

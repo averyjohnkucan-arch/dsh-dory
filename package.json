@@ -1,7 +1,7 @@
 {
   "name": "dsh-dory",
-  "version": "0.1.2",
-  "description": "Standalone Dory inference provider with independently saved loop-count profiles for DeepSeek Harness.",
+  "version": "0.2.0",
+  "description": "Dory local models with portable configs, native memory fitting and persistent conversation checkpoints for DeepSeek Harness.",
   "type": "module",
   "license": "MIT",
   "engines": {

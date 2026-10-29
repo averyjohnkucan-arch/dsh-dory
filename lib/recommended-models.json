@@ -16,7 +16,7 @@
           "evidence": "Existing local download/hash receipt"
         }
       ],
-      "notes": "From your saved setup. Confirm engine compatibility and memory fit before loading. Local runtime packs are prepared separately.",
+      "notes": "Existing BF16 GGUF from your earlier setup. Import the local file; it is not a download of the original Safetensors checkpoint.",
       "settings": {
         "loops": 1,
         "context": 262144,
@@ -36,6 +36,33 @@
           "dry_multiplier": 0,
           "xtc_probability": 0
         }
+      }
+    },
+    {
+      "id": "dory-official-q5-k-m",
+      "name": "Dory 1.0 4B \u00b7 official Q5_K_M",
+      "recommended": true,
+      "revision": "df53755cb8741843af8e019e088819fbef17e29b",
+      "files": [
+        {
+          "repo": "nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-GGUF",
+          "revision": "df53755cb8741843af8e019e088819fbef17e29b",
+          "file": "NVIDIA-Nemotron-Labs-Dory1.0-4B-Q5_K_M.gguf",
+          "name": "NVIDIA-Nemotron-Labs-Dory1.0-4B-Q5_K_M.gguf",
+          "target": "NVIDIA-Nemotron-Labs-Dory1.0-4B-Q5_K_M.gguf",
+          "role": "modelPath",
+          "size": 3673288864,
+          "sha256": "96080be49ffd67b916018b7bdef8c484762576fb52780e10ab98ac4978a660e0",
+          "downloadable": true
+        }
+      ],
+      "notes": "Official NVIDIA GGUF, pinned to an immutable revision and SHA-256. Two loops by default. Download does not load the model.",
+      "settings": {
+        "loops": 2,
+        "context": 262144,
+        "kvK": "f16",
+        "kvV": "f16",
+        "kvMode": "per_loop"
       }
     }
   ]

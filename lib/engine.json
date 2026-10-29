@@ -3,6 +3,8 @@
   "revision": "98a74c97ea09ac72f6ceda1559808fc0a2f447ce",
   "tree": "6658d6a34cfe6c98b514bae6682769b936be4f54",
   "backend": "CUDA",
-  "model_support": "Dory per_loop and last_loop; loops1–4",
-  "qualification": "Pinned implementation only; per-profile model acceptance remains required"
+  "model_support": "Dory per_loop and last_loop; loops1\u20134",
+  "qualification": "Pinned implementation only; per-profile model acceptance remains required",
+  "runtimeRelease": "engine-98a74c97-linux-x64-sm120-r1",
+  "runtimeManifestSha256": "89d66649c4fc74acf7b91bd584cc1aea030864eeecb63d3ffdf3badeb8a3f9ab"
 }
