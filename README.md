@@ -46,3 +46,7 @@ State lives under `DSH_HOME/dsh-dory` (normally `~/.dsh/dsh-dory`), or the confi
 Node 22.19+ and DSH 0.2.1-rc.2 are required. Run `pnpm install --ignore-scripts`, `pnpm run check` and `pnpm test`. No engine process or model download is needed for the automated tests. Native validation and its limits are recorded in [validation](docs/validation.md).
 
 The portable file matching and job queue were adapted from the user's MIT-licensed Strata/NInfer plugins. The GGUF inspector uses Node.js and has no Python dependency. They are included locally, with no runtime dependency on those plugins. Engine source stays pinned; this release adds plugin features without changing its inference implementation.
+
+## Shared GPU handoff
+
+Install [dsh-model-scheduler](https://github.com/averyjohnkucan-arch/dsh-model-scheduler) and restart DSH to coordinate Dory, NInfer and Strata 0.6.4+. Dory's chat, manual Load, native memory fitting and throughput benchmark all acquire the selected GPU's shared lease. Chat holds it through checkpoint saving. Benchmark requests follow scheduler cancellation as well as the job's Cancel button. Without the optional scheduler, unload other providers yourself.

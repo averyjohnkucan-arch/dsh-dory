@@ -934,6 +934,13 @@ window.__ModuleLoader__.load({
               "div",
               { className: "dsh-dory-header" },
               h("h3", null, "Dory ", h("small", null, data?.version || "")),
+              h(
+                "small",
+                null,
+                data?.sharedScheduler
+                  ? "Shared GPU scheduler"
+                  : "Independent GPU queue",
+              ),
               button(
                 "Purge all cache",
                 async () => {

@@ -51,3 +51,37 @@ test("benchmark job reports native prefill/decode and persists exact settings wi
   assert.equal(saved.tuneReport.settings.loops, 3);
   await reload.dispose();
 });
+
+test("benchmark honours scheduler cancellation and releases admission", async (t) => {
+  const { benchmark } = await import("../lib/benchmark.js");
+  const controller = new AbortController(),
+    original = new AbortController();
+  const state = { active: 0, url: "http://127.0.0.1:1" };
+  let released = 0,
+    unloaded = 0;
+  const runtime = {
+    find: () => ({ ...freshProfile(), context: 32768 }),
+    async unload() {
+      unloaded++;
+    },
+    async acquire() {
+      controller.abort();
+      return {
+        state,
+        signal: controller.signal,
+        release() {
+          released++;
+        },
+      };
+    },
+    onChange() {},
+  };
+  await assert.rejects(
+    benchmark(runtime, "fixture", original.signal, () => {}),
+    { name: "AbortError" },
+  );
+  assert.equal(original.signal.aborted, false);
+  assert.equal(released, 1);
+  assert.equal(unloaded, 2);
+  assert.equal(state.active, 0);
+});

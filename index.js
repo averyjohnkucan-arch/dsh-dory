@@ -31,6 +31,7 @@ export async function apply(ctx, config) {
     scope.effect(() => {
       const scheduler = scope.get("modelScheduler");
       runtime.scheduler = scheduler;
+      runtime.onChange();
       const unregister = scheduler.registerProvider("dory", () =>
         runtime.profiles.filter((p) => p.enabled).map((p) => runtime.driver(p)),
       );
@@ -39,6 +40,7 @@ export async function apply(ctx, config) {
         for (const p of runtime.profiles)
           await scheduler.unload("dory:" + p.id, { force: true });
         runtime.scheduler = null;
+        runtime.onChange();
       };
     }),
   );
