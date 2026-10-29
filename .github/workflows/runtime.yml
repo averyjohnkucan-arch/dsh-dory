@@ -1,0 +1,44 @@
+name: runtime
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/runtime.yml, scripts/package-runtime.py]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      RUNTIME_TAG: engine-98a74c97-linux-x64-sm120-r1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check published runtime
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RUNTIME_TAG" >/dev/null 2>&1; then
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install CUDA toolchain
+        if: steps.release.outputs.exists != 'true'
+        run: |
+          curl -fsSLo /tmp/cuda-keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i /tmp/cuda-keyring.deb
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cuda-nvcc-13-1 cuda-nvtx-13-1 cuda-cccl-13-1 cuda-driver-dev-13-1 cuda-cudart-dev-13-1 libcublas-dev-13-1 cmake ninja-build
+      - name: Build source pin and package runtime
+        if: steps.release.outputs.exists != 'true'
+        env:
+          PATH: /usr/local/cuda-13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        run: python3 scripts/package-runtime.py
+      - name: Publish checked runtime
+        if: steps.release.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist-runtime
+          sha256sum ./* > SHA256SUMS.txt
+          gh release create "$RUNTIME_TAG" ./* --target "$GITHUB_SHA" --latest=false --title 'Dory CUDA runtime (SM120)' --notes 'Pinned Dory llama.cpp source, Linux x64, glibc 2.39+, CUDA 13.1, SM120. Private CUDA and C++ runtime libraries included. Host NVIDIA driver required. File checksums, source provenance and license notices included.'
