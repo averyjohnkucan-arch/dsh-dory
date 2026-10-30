@@ -50,3 +50,5 @@ The portable file matching and job queue were adapted from the user's MIT-licens
 ## Shared GPU handoff
 
 Install [dsh-model-scheduler](https://github.com/averyjohnkucan-arch/dsh-model-scheduler) and restart DSH to coordinate Dory, NInfer and Strata 0.6.4+. Dory's chat, manual Load, native memory fitting and throughput benchmark all acquire the selected GPU's shared lease. Chat holds it through checkpoint saving. Benchmark requests follow scheduler cancellation as well as the job's Cancel button. Without the optional scheduler, unload other providers yourself.
+
+See [COMPATIBILITY.md](COMPATIBILITY.md) for supported DSH versions and upgrade checks.
