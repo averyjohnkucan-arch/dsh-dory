@@ -2,3 +2,7 @@ node_modules
 coverage/
 *.tgz
 .DS_Store
+
+# DSH compatibility workflow scratch data
+.compat-home/
+.compat-packed/
