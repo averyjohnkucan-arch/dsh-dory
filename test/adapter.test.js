@@ -106,16 +106,19 @@ test("DSH adapter streams via standard wire with per-profile sampler and balance
   assert.equal(acquired, 1);
   assert.equal(released, 1);
   assert.equal(state.active, 0);
+  for await (const c of prepared.stream({provider:"dory",model:"fixture",messages:[],reasoningEffort:"off"})) {}
+  assert.equal(bodies.at(-1).chat_template_kwargs.enable_thinking, false);
+  assert.equal(bodies.at(-1).reasoning_effort, "none");
   await assert.rejects(async () => {
     for await (const c of prepared.stream({
       provider: "dory",
       model: "fixture",
       messages: [],
-      reasoningEffort: "off",
+      reasoningEffort: "low",
     })) {
     }
-  }, /thinking mode/);
-  assert.equal(acquired, 1);
+  }, /Thinking or Off/);
+  assert.equal(acquired, 2);
 });
 test("only a successful finish replaces the session checkpoint; errors and interrupted streams retain it", async () => {
   const p = freshProfile(),
