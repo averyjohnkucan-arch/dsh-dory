@@ -1,5 +1,7 @@
 # Dory for DeepSeek Harness
 
+**RC4 installation trial.** Start DeepSeek Harness with `npx @deepseek-ai/dsh@0.2.2-rc.4 web` (Node.js 24.9 or newer). In **Plugins → Add plugin**, paste the full path to this RC4 trial’s `.tgz` file and enable the plugin.
+
 Install `https://github.com/averyjohnkucan-arch/dsh-dory` through DSH's plugin manager. The **Dory** provider appears under Models. This plugin is independent of Strata and NInfer.
 
 ## Set up a model
@@ -43,7 +45,7 @@ State lives under `DSH_HOME/dsh-dory` (normally `~/.dsh/dsh-dory`), or the confi
 
 ## Development
 
-Node 22.19+ and DSH 0.2.1-rc.2 are required. Run `pnpm install --ignore-scripts`, `pnpm run check` and `pnpm test`. No engine process or model download is needed for the automated tests. Native validation and its limits are recorded in [validation](docs/validation.md).
+Node 24.9+ and DSH 0.2.2-rc.4 are required. Run `pnpm install --ignore-scripts`, `pnpm run check` and `pnpm test`. No engine process or model download is needed for the automated tests. Native validation and its limits are recorded in [validation](docs/validation.md).
 
 The portable file matching and job queue were adapted from the user's MIT-licensed Strata/NInfer plugins. The GGUF inspector uses Node.js and has no Python dependency. They are included locally, with no runtime dependency on those plugins. Engine source stays pinned; this release adds plugin features without changing its inference implementation.
 
