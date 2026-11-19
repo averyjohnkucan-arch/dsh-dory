@@ -43,7 +43,7 @@ State lives under `DSH_HOME/dsh-dory` (normally `~/.dsh/dsh-dory`), or the confi
 
 ## Development
 
-Node 22.19+ and DSH 0.2.1-rc.2 are required. Run `pnpm install --ignore-scripts`, `pnpm run check` and `pnpm test`. No engine process or model download is needed for the automated tests. Native validation and its limits are recorded in [validation](docs/validation.md).
+The GitHub bundle was verified on DSH 0.2.2-rc.4 with Node.js 24.9 or newer. For source checks, run `pnpm install --ignore-scripts`, `pnpm run check` and `pnpm test`. No engine process or model download is needed for the automated tests. Native validation and its limits are recorded in [validation](docs/validation.md).
 
 The portable file matching and job queue were adapted from the user's MIT-licensed Strata/NInfer plugins. The GGUF inspector uses Node.js and has no Python dependency. They are included locally, with no runtime dependency on those plugins. Engine source stays pinned; this release adds plugin features without changing its inference implementation.
 
